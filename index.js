@@ -1,14 +1,19 @@
 import {Dictionary} from "./dictionary.js";
 const words = Dictionary;
 
-const state = {
-  secret: words[Math.floor(Math.random() * words.length)],
-  grid: Array(6)
-    .fill()
-    .map(() => Array(5).fill('')),
-  currentRow: 0,
-  currentCol: 0,
+const buttons = document.querySelectorAll('.btn')//WIP
+
+const originalState = {
+    secret: words[Math.floor(Math.random() * words.length)],
+    grid: Array(6)
+      .fill()
+      .map(() => Array(5).fill('')),
+    currentRow: 0,
+    currentCol: 0,
 };
+
+const state = {}; //Current state
+
   
 function drawGrid(container) {
   const grid = document.createElement('div');
@@ -41,33 +46,67 @@ function drawBox(container, row, col, letter = '') {
   container.appendChild(box);
   return box;
 }
-  
-function registerKeyboardEvents() {
-  document.body.onkeydown = (e) => {
-    const key = e.key;
-    if (key === 'Enter') {
-      if (state.currentCol === 5) {
-        const word = getCurrentWord();
-        if (isWordValid(word)) {
-          revealWord(word);
-          state.currentRow++;
-          state.currentCol = 0;
-        } else {
-          alert('Not a valid word.');
+
+//===============================================
+//WIP Zone
+
+//handles keyboard inputs
+class KeyboardInput {
+  constructor() {
+      this.initVirtualKeyboardListeners();
+      this.initPhysicalKeyboardListeners();
+  }
+
+  initVirtualKeyboardListeners() {
+      document.querySelectorAll("[data-key]").forEach(button => {
+          button.addEventListener("click", (event) => {
+              const letter = event.target.getAttribute("data-key");
+              if (letter) {
+                  this.handleKeyInput(letter);
+              }
+          });
+      });
+  }
+
+  initPhysicalKeyboardListeners() {
+      document.addEventListener("keydown", (event) => {
+          const key = event.key.toLowerCase();
+          if ((key >= 'a' && key <= 'z') || key === 'enter' || key === 'backspace') {
+              this.handleKeyInput(key);
+          }
+      });
+  }
+
+  handleKeyInput(letter) {
+      registerKeyboardEvents(letter); // Call the function with the detected key
+  }
+}
+
+function registerKeyboardEvents(key) {
+    if (key === 'enter') {
+        if (state.currentCol === 5) {
+            const word = getCurrentWord();
+            if (isWordValid(word)) {
+                revealWord(word);
+                state.currentRow++;
+                state.currentCol = 0;
+            } else {
+                alert('Not a valid word.');
+            }
         }
-      }
-    }
-    if (key === 'Backspace') {
-      removeLetter();
-    }
-    if (isLetter(key)) {
-      addLetter(key);
+    } else if (key === 'backspace') {
+        removeLetter();
+    } else if (isLetter(key)) {
+        addLetter(key);
     }
 
     updateGrid();
-  };
 }
   
+//======================================================================
+
+
+
 function getCurrentWord() {
   return state.grid[state.currentRow].reduce((prev, curr) => prev + curr);
 }
@@ -85,7 +124,7 @@ function getNumOfOccurrencesInWord(word, letter) {
   }
   return result;
 }
-  
+
 function getPositionOfOccurrence(word, letter, position) {
   let result = 0;
   for (let i = 0; i <= position; i++) {
@@ -137,12 +176,19 @@ function revealWord(guess) {
   setTimeout(() => {
     if (isWinner) {
       alert('Congratulations!');
+      reset();
     } else if (isGameOver) {
       alert(`Better luck next time! The word was ${state.secret}.`);
+      reset();
     }
   }, 3 * animation_duration);
 }
   
+function reset() {
+  Object.assign(state, originalState);
+  updateGrid();
+}
+
 function isLetter(key) {
   return key.length === 1 && key.match(/[a-z]/i);
 }
@@ -162,8 +208,9 @@ function removeLetter() {
 function startup() {
   const game = document.getElementById('game');
   drawGrid(game);
-
   registerKeyboardEvents();
+  console.log(state.secret)
 }
 
 startup();
+
